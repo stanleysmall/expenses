@@ -2,48 +2,52 @@
 <html>
 
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 
 <body>
-  <h2>His/Her Expense Tracker</h2>
+  <div class="app">
+    <h2>Expense Tracker</h2>
 
-  <h4>Purchase Amount</h4>
-  <input type="number" id="amount" value="0">
-
-  <h4>His/Her Split</h4>
-  <input type="number" id="percent" value="50">
-  <input type="range" min="0" max="100" value="50" class="slider" id="split" class="range blue">
-
-  <p>Purchase Split: (<span id="his" style="color:rgb(59,173,227)"></span> / <span id="her"
-      style="color:rgb(255,53,127)"></span>)</p>
+    <h4>Purchase Amount</h4>
+    <div class="section">
+      <input type="number" id="amount" value="0">
+    </div>
 
 
-  <h4>Payer</h4>
+    <h4>His/Her Split</h4>
+    <div class="section">
+      <input type="number" id="percent" value="50">
+      <br>
+      <input type="range" min="0" max="100" value="50" class="slider" id="split" class="range blue">
+    </div>
 
-  <div>
-    <input type="radio" name="payer" id="he_paid" value=0 checked>
-    <label for="he" style="color:rgb(59,173,227)">He Paid</label>
+    <p>Purchase Split: (<span id="his" style="color:rgb(59,173,227)"></span> / <span id="her"
+        style="color:rgb(255,53,127)"></span>)</p>
+
+
+    <h4>Payer</h4>
+    <div class="section">
+      <input type="radio" name="payer" id="he_paid" value=0 checked>
+      <label for="he" style="color:rgb(59,173,227)">He Paid</label>
+      <input type="radio" name="payer" id="she_paid" value=1>
+      <label for="she" style="color:rgb(255,53,127)">She Paid</label>
+    </div>
+
+    <p><span id="summary"></span></p>
+
+    <input type="submit" value="Save" id="submit">
+
+    <h3>Summary</h3>
+
+    <p>Total Expenses: $<span id="total"></span> (<span id="his_total" style="color:rgb(59,173,227)"></span>/<span
+        id="her_total" style="color:rgb(255,53,127)"></span>)</p>
+    <p><span id="balance"></span></p>
+
+
+    <span id="history"></span>
+
   </div>
-
-  <div>
-    <input type="radio" name="payer" id="she_paid" value=1>
-    <label for="she" style="color:rgb(255,53,127)">She Paid</label>
-  </div>
-
-  <p>Purchase Summary: <span id="summary"></span></p>
-
-  <input type="submit" value="Save" id="submit">
-
-  <h3>Summary</h3>
-
-  <p>Total Expenses: $<span id="total"></span> (<span id="his_total" style="color:rgb(59,173,227)"></span>/<span id="her_total"
-      style="color:rgb(255,53,127)"></span>)</p>
-  <p><span id="balance"></span></p>
-
-
-  <span id="history"></span>
-
 
 
 
@@ -125,7 +129,7 @@
         console.assert(total_updated, his_updated + her_updated)
         set(id, [Number(amount.value), previous_payer, Number(his_purchase), Number(her_purchase), total_updated, Number(balance_num)])
 
-        history_table = ["Purchase,Payer,He Pays,She Pays,Total Expenses,She Owes Him"].concat(get_history());
+        history_table = ["Amount,Payer,He,She,Total,Owed"].concat(get_history());
 
         console.log(history_table);
 
@@ -197,9 +201,24 @@
   <style>
     body,
     html {
-      /* background-color: #1d1c25; */
+      background-color: #fff5fc;
       margin: 0;
       padding: 0;
+    }
+
+    div[class=app] {
+      justify-content: center;
+      align-items: center;
+      border: 10px solid #fff5fc;
+    }
+
+    div[class=section] {
+      width: 300px;
+    }
+
+    div {
+      justify-content: center;
+      align-items: center;
     }
 
     .range {
@@ -208,9 +227,18 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 200px;
+      width: 300px;
       margin-top: 10px;
       transform: translate(-50%, -50%);
+    }
+
+    input {
+      width: 300px;
+    }
+
+    input[type=radio] {
+      width: 20px;
+      justify-content: space-evenly;
     }
 
     input[type=range]::-webkit-slider-runnable-track {
