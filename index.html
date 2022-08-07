@@ -19,7 +19,7 @@
     <div class="section">
       <input type="number" id="percent" value="50">
       <br>
-      <input type="range" min="0" max="100" value="50" class="slider" id="split" class="range blue">
+      <input type="range" min="0" max="10000" value="5000" class="slider" id="split" class="range blue">
     </div>
 
     <p>Purchase Split: (<span id="his" style="color:rgb(59,173,227)"></span> / <span id="her"
@@ -28,19 +28,22 @@
 
     <h4>Payer</h4>
     <div class="section">
-      <input type="radio" name="payer" id="he_paid" value=0 checked>
-      <label for="he" style="color:rgb(59,173,227)">He Paid</label>
-      <input type="radio" name="payer" id="she_paid" value=1>
-      <label for="she" style="color:rgb(255,53,127)">She Paid</label>
+      <input type="button" id="he_paid" value="He Paid">
+      <input type="button" id="she_paid" value="She Paid">
     </div>
 
     <p><span id="summary"></span></p>
 
+    <h4>Note</h4>
+    <div class="section">
+      <input type="text" id="note">
+    </div>
+    <br>
     <input type="submit" value="Save" id="submit">
 
     <h3>Summary</h3>
 
-    <p>Total Expenses: $<span id="total"></span> (<span id="his_total" style="color:rgb(59,173,227)"></span>/<span
+    <p>Total Expenses: $<span id="total"></span> (<span id="his_total" style="color:rgb(59,173,227)"></span> / <span
         id="her_total" style="color:rgb(255,53,127)"></span>)</p>
     <p><span id="balance"></span></p>
 
@@ -68,58 +71,59 @@
     var she_paid = document.getElementById("she_paid");
     var total = document.getElementById("total");
     var balance = document.getElementById("balance");
+    var note = document.getElementById("note");
 
     set("HIS", 0);
     set("HER", 0);
     set("TOTAL", 0);
     set("BALANCE", 0);
+    set("PREVIOUS_PAYER", "HE");
 
     function update_all(save) {
-      var p = split.value / 100;
+      var p = split.value / 10000;
 
-      her_purchase = Math.round(p * amount.value);
-      his_purchase = Math.round((1 - p) * amount.value);
-      her.innerHTML = her_purchase;
-      his.innerHTML = his_purchase;
-      var his_total = get("HIS");
-      var her_total = get("HER");
-      var his_updated = Number(his_total) + Number(his_purchase);
-      var her_updated = Number(her_total) + Number(her_purchase);
-      his_total_display.innerHTML = his_updated;
-      her_total_display.innerHTML = her_updated;
-      var total_updated = Number(get("TOTAL")) + Number(amount.value)
-      total.innerHTML = total_updated;
+      var amount_value = format(amount.value)
+      her_purchase = format(p * amount.value);
+      his_purchase = format(amount.value - Number(display(her_purchase)));
+      var his_total = format(get("HIS"));
+      var her_total = format(get("HER"));
+      var his_updated = his_total + his_purchase;
+      var her_updated = her_total + her_purchase;
+      var total_updated = format(get("TOTAL")) + amount_value;
+
+      her.innerHTML = display(her_purchase);
+      his.innerHTML = display(his_purchase);
+      his_total_display.innerHTML = display(his_updated);
+      her_total_display.innerHTML = display(her_updated);
+      total.innerHTML = display(total_updated);
 
       // BALANCE is a measure of how much she owes him
       // a negative value indicates he owes her money
-      var balance_num = Number(get("BALANCE"));
+      var balance_num = format(get("BALANCE"));
 
-      if (he_paid.checked) {
-        summary.innerHTML = "He paid $" + amount.value + " but she owes him $" + her_purchase + ".";
-        balance_num = Number(balance_num) + (Number(amount.value) - Number(his_purchase));
-        set("PREVIOUS_PAYER", "HE");
+      var previous_payer = get("PREVIOUS_PAYER");
+      if (previous_payer == "HE") {
+        he_paid.style = "background-color:rgb(59,173,227)"
+        she_paid.style = ""
+        summary.innerHTML = "He paid $" + display(amount_value) + " but she owes him $" + display(her_purchase) + ".";
+        balance_num = balance_num + (amount_value - his_purchase);
       }
-      if (she_paid.checked) {
-        summary.innerHTML = "She paid $" + amount.value + " but he owes her $" + his_purchase + ".";
-        balance_num = Number(balance_num) - (Number(amount.value) - Number(her_purchase));
-        set("PREVIOUS_PAYER", "SHE");
+      if (previous_payer == "SHE") {
+        he_paid.style = ""
+        she_paid.style = "background-color:rgb(255,53,127)"
+        summary.innerHTML = "She paid $" + display(amount_value) + " but he owes her $" + display(his_purchase) + ".";
+        balance_num = balance_num - (amount_value - her_purchase);
       }
 
       if (balance_num < 0) {
-        balance.innerHTML = "He owes her $" + Number(-1 * balance_num) + ".";
+        balance.innerHTML = "He owes her $" + display(format(-1 * balance_num)) + ".";
       }
       if (balance_num > 0) {
-        balance.innerHTML = "She owes him $" + Number(balance_num) + ".";
+        balance.innerHTML = "She owes him $" + display(balance_num) + ".";
       }
 
       if (save) {
-        var previous_payer = get("PREVIOUS_PAYER");
-        if (previous_payer == "HE") {
-          he_paid.checked = "checked"
-        }
-        if (previous_payer == "SHE") {
-          she_paid.checked = "checked"
-        }
+
 
         id = Date.now()
         set("HIS", his_updated);
@@ -127,20 +131,19 @@
         set("TOTAL", total_updated);
         set("BALANCE", balance_num);
         console.assert(total_updated, his_updated + her_updated)
-        set(id, [Number(amount.value), previous_payer, Number(his_purchase), Number(her_purchase), total_updated, Number(balance_num)])
+        set(id, [display(amount_value), previous_payer, display(his_purchase), display(her_purchase), display(total_updated), display(balance_num), note.value])
 
-        history_table = ["Amount,Payer,He,She,Total,Owed"].concat(get_history());
+        history_table = ["Amount,Payer,He,She,Total,Owed,Note"].concat(get_history());
 
         console.log(history_table);
 
         hist.innerHTML = "<h3>History</h3>" + makeTableHTML(history_table);
 
         amount.value = 0;
-        split.value = 50;
-        percent.value = split.value;
-        her.innerHTML = "";
-        his.innerHTML = "";
-        summary.innerHTML = "";
+        her.innerHTML = " ";
+        his.innerHTML = " ";
+        summary.innerHTML = " ";
+        note.innerHTML = "";
       }
     }
 
@@ -159,10 +162,10 @@
     }
 
     amount.oninput = function () { update_all(false); }
-    he_paid.oninput = function () { update_all(false); }
-    she_paid.oninput = function () { update_all(false); }
-    split.oninput = function () { percent.value = this.value; update_all(false); }
-    percent.oninput = function () { split.value = this.value; update_all(false); }
+    he_paid.onclick = function () { set("PREVIOUS_PAYER", "HE"); update_all(false); }
+    she_paid.onclick = function () { set("PREVIOUS_PAYER", "SHE"); update_all(false); }
+    split.oninput = function () { percent.value = this.value/100; update_all(false); }
+    percent.oninput = function () { split.value = this.value*100; update_all(false); }
 
     submit.onclick = function () {
       update_all(true);
@@ -195,153 +198,45 @@
       return result;
     }
 
+    function format(n) {
+      return Number(n)
+    }
+
+    function display(number, decPlaces, decSep, thouSep) {
+      decPlaces = isNaN(decPlaces = Math.abs(decPlaces)) ? 2 : decPlaces,
+        decSep = typeof decSep === "undefined" ? "." : decSep;
+      thouSep = typeof thouSep === "undefined" ? "" : thouSep;
+      var sign = number < 0 ? "-" : "";
+      var i = String(parseInt(number = Math.abs(Number(number) || 0).toFixed(decPlaces)));
+      var j = (j = i.length) > 3 ? j % 3 : 0;
+
+      return sign +
+        (j ? i.substr(0, j) + thouSep : "") +
+        i.substr(j).replace(/(\decSep{3})(?=\decSep)/g, "$1" + thouSep) +
+        (decPlaces ? decSep + Math.abs(number - i).toFixed(decPlaces).slice(2) : "");
+    }
+
+
 
   </script>
 
   <style>
-    body,
     html {
       background-color: #fff5fc;
-      margin: 0;
-      padding: 0;
-    }
-
-    div[class=app] {
-      justify-content: center;
-      align-items: center;
-      border: 10px solid #fff5fc;
-    }
-
-    div[class=section] {
-      width: 300px;
-    }
-
-    div {
-      justify-content: center;
-      align-items: center;
-    }
-
-    .range {
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 300px;
-      margin-top: 10px;
-      transform: translate(-50%, -50%);
     }
 
     input {
+      font-weight: bold;
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      border: none;
       width: 300px;
+      height: 30px;
+      background-color:rgb(249, 234, 254)
     }
 
-    input[type=radio] {
-      width: 20px;
+    input[type=button] {
+      width: 148px;
       justify-content: space-evenly;
-    }
-
-    input[type=range]::-webkit-slider-runnable-track {
-      -webkit-appearance: none;
-      background: rgba(59, 173, 227, 1);
-      background: -moz-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: -webkit-gradient(left bottom, right top, color-stop(0%, rgba(59, 173, 227, 1)), color-stop(25%, rgba(87, 111, 230, 1)), color-stop(51%, rgba(152, 68, 183, 1)), color-stop(100%, rgba(255, 53, 127, 1)));
-      background: -webkit-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: -o-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: -ms-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#3bade3 ', endColorstr='#ff357f ', GradientType=1);
-      height: 2px;
-    }
-
-    input[type=range]:focus {
-      outline: none;
-    }
-
-    input[type=range]::-moz-range-track {
-      -moz-appearance: none;
-      background: rgba(59, 173, 227, 1);
-      background: -moz-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: -webkit-gradient(left bottom, right top, color-stop(0%, rgba(59, 173, 227, 1)), color-stop(25%, rgba(87, 111, 230, 1)), color-stop(51%, rgba(152, 68, 183, 1)), color-stop(100%, rgba(255, 53, 127, 1)));
-      background: -webkit-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: -o-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: -ms-linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      background: linear-gradient(45deg, rgba(59, 173, 227, 1) 0%, rgba(87, 111, 230, 1) 25%, rgba(152, 68, 183, 1) 51%, rgba(255, 53, 127, 1) 100%);
-      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#3bade3 ', endColorstr='#ff357f ', GradientType=1);
-      height: 2px;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      border: 2px solid;
-      border-radius: 50%;
-      height: 25px;
-      width: 25px;
-      max-width: 80px;
-      position: relative;
-      bottom: 11px;
-      background-color: #1d1c25;
-      cursor: -webkit-grab;
-
-      -webkit-transition: border 1000ms ease;
-      transition: border 1000ms ease;
-    }
-
-    input[type=range]::-moz-range-thumb {
-      -moz-appearance: none;
-      border: 2px solid;
-      border-radius: 50%;
-      height: 25px;
-      width: 25px;
-      max-width: 80px;
-      position: relative;
-      bottom: 11px;
-      background-color: #1d1c25;
-      cursor: -moz-grab;
-      -moz-transition: border 1000ms ease;
-      transition: border 1000ms ease;
-    }
-
-
-
-    .range.blue::-webkit-slider-thumb {
-      border-color: rgb(59, 173, 227);
-    }
-
-    .range.ltpurple::-webkit-slider-thumb {
-      border-color: rgb(87, 111, 230);
-    }
-
-    .range.purple::-webkit-slider-thumb {
-      border-color: rgb(152, 68, 183);
-    }
-
-    .range.pink::-webkit-slider-thumb {
-      border-color: rgb(255, 53, 127);
-    }
-
-    .range.blue::-moz-range-thumb {
-      border-color: rgb(59, 173, 227);
-    }
-
-    .range.ltpurple::-moz-range-thumb {
-      border-color: rgb(87, 111, 230);
-    }
-
-    .range.purple::-moz-range-thumb {
-      border-color: rgb(152, 68, 183);
-    }
-
-    .range.pink::-moz-range-thumb {
-      border-color: rgb(255, 53, 127);
-    }
-
-    input[type=range]::-webkit-slider-thumb:active {
-      cursor: -webkit-grabbing;
-    }
-
-    input[type=range]::-moz-range-thumb:active {
-      cursor: -moz-grabbing;
     }
   </style>
 
