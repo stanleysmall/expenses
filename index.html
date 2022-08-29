@@ -6,53 +6,64 @@
 </head>
 
 <body>
-  <div class="app">
-    <h2>Expense Tracker</h2>
-
-    <h4>Purchase Amount</h4>
-    <div class="section">
-      <input type="number" id="amount" value="0">
-    </div>
+  <h2>Expense Tracker</h2>
+  <div style="display: inline-block;">
+    <div class="container">
 
 
-    <h4>His/Her Split</h4>
-    <div class="section">
-      <input type="number" id="percent" value="50">
+      <h4>Import/Export</h4>
+      <div class="section">
+        <input type="button" id="import" value="Import">
+        <input type="button" id="export" value="Export">
+      </div>
+
+      <h4>Purchase Amount</h4>
+      <div class="section">
+        <input type="number" id="amount" value="0">
+      </div>
+
+
+      <h4>His/Her Split</h4>
+      <div class="section">
+        <input type="number" id="percent" value="50">
+        <br>
+        <input type="range" min="0" max="10000" value="5000" class="slider" id="split" class="range blue">
+      </div>
+
+      <p>Purchase Split: (<span id="his" style="color:rgb(59,173,227)"></span> / <span id="her"
+          style="color:rgb(255,53,127)"></span>)</p>
+
+
+      <h4>Payer</h4>
+      <div class="section">
+        <input type="button" id="he_paid" value="He Paid">
+        <input type="button" id="she_paid" value="She Paid">
+      </div>
+
+      <p><span id="summary"></span></p>
+
+      <h4>Note</h4>
+      <div class="section">
+        <input type="text" id="note">
+      </div>
       <br>
-      <input type="range" min="0" max="10000" value="5000" class="slider" id="split" class="range blue">
+      <input type="submit" value="Save" id="submit">
+
+
+
+
+
+
     </div>
+    <div class="container">
+      <h3>Summary</h3>
 
-    <p>Purchase Split: (<span id="his" style="color:rgb(59,173,227)"></span> / <span id="her"
-        style="color:rgb(255,53,127)"></span>)</p>
-
-
-    <h4>Payer</h4>
-    <div class="section">
-      <input type="button" id="he_paid" value="He Paid">
-      <input type="button" id="she_paid" value="She Paid">
+      <p>Total Expenses: $<span id="total"></span> (<span id="his_total" style="color:rgb(59,173,227)"></span> / <span
+          id="her_total" style="color:rgb(255,53,127)"></span>)</p>
+      <p><span id="balance"></span></p>
+      <span id="history"></span>
     </div>
-
-    <p><span id="summary"></span></p>
-
-    <h4>Note</h4>
-    <div class="section">
-      <input type="text" id="note">
-    </div>
-    <br>
-    <input type="submit" value="Save" id="submit">
-
-    <h3>Summary</h3>
-
-    <p>Total Expenses: $<span id="total"></span> (<span id="his_total" style="color:rgb(59,173,227)"></span> / <span
-        id="her_total" style="color:rgb(255,53,127)"></span>)</p>
-    <p><span id="balance"></span></p>
-
-
-    <span id="history"></span>
-
   </div>
-
-
 
   <script>
     localStorage.clear();
@@ -65,7 +76,6 @@
     var his_total_display = document.getElementById("his_total");
     var submit = document.getElementById("submit");
     var percent = document.getElementById("percent");
-    var hist = document.getElementById("history");
     var summary = document.getElementById("summary");
     var he_paid = document.getElementById("he_paid");
     var she_paid = document.getElementById("she_paid");
@@ -73,10 +83,9 @@
     var balance = document.getElementById("balance");
     var note = document.getElementById("note");
 
-    set("HIS", 0);
-    set("HER", 0);
-    set("TOTAL", 0);
-    set("BALANCE", 0);
+    var importButton = document.getElementById("import");
+    var exportButton = document.getElementById("export");
+
     set("PREVIOUS_PAYER", "HE");
 
     function update_all(save) {
@@ -122,22 +131,14 @@
         balance.innerHTML = "She owes him $" + display(balance_num) + ".";
       }
 
+
+
       if (save) {
 
 
         id = Date.now()
-        set("HIS", his_updated);
-        set("HER", her_updated);
-        set("TOTAL", total_updated);
-        set("BALANCE", balance_num);
-        console.assert(total_updated, his_updated + her_updated)
         set(id, [display(amount_value), previous_payer, display(his_purchase), display(her_purchase), display(total_updated), display(balance_num), note.value])
 
-        history_table = ["Amount,Payer,He,She,Total,Owed,Note"].concat(get_history());
-
-        console.log(history_table);
-
-        hist.innerHTML = "<h3>History</h3>" + makeTableHTML(history_table);
 
         amount.value = 0;
         her.innerHTML = " ";
@@ -145,6 +146,14 @@
         summary.innerHTML = " ";
         note.innerHTML = "";
       }
+
+      update_table()
+    }
+
+    function update_table() {
+      history_table = ["ID,Amount,Payer,He,She,Total,Owed,Note"].concat(get_history());
+      var hist = document.getElementById("history");
+      hist.innerHTML = "<h3>History</h3>" + makeTableHTML(history_table);
     }
 
     function get_history() {
@@ -152,11 +161,52 @@
       var keys = Object.keys(localStorage).sort();
       var i = keys.length;
 
+      var total_amount = 0;
+      var total_he = 0;
+      var total_she = 0;
+      var total_owed = 0;
+
       while (i--) {
-        if (!isNaN(keys[i])) {
-          archive.push(localStorage.getItem(keys[i]));
+        if (Number(keys[i])) {
+          var storage_value = localStorage.getItem(keys[i])
+          var value = String(keys[i]) + ',' + storage_value;
+          archive.push(value);
+
+          var ammount;
+          var payer;
+          var he;
+          var she;
+          var total;
+          var owed;
+          var note;
+
+          var arr = String(storage_value).split(',');
+
+          ammount = Number(arr[0])
+          payer = arr[1]
+          he = Number(arr[2])
+          she = Number(arr[3])
+
+          total_amount += ammount;
+          total_he += he;
+          total_she += she;
+
+          if (payer == "HE") {
+            total_owed += (ammount - he);
+          }
+          if (payer == "SHE") {
+            total_owed -= (ammount - she);
+          }
+
         }
       }
+
+      set("HIS", Number(total_he));
+      set("HER", Number(total_she));
+      set("TOTAL", Number(total_amount));
+      set("BALANCE", Number(total_owed));
+
+      // console.log(total_he, total_she, total_amount, total_owed)
 
       return archive;
     }
@@ -164,15 +214,74 @@
     amount.oninput = function () { update_all(false); }
     he_paid.onclick = function () { set("PREVIOUS_PAYER", "HE"); update_all(false); }
     she_paid.onclick = function () { set("PREVIOUS_PAYER", "SHE"); update_all(false); }
-    split.oninput = function () { percent.value = this.value/100; update_all(false); }
-    percent.oninput = function () { split.value = this.value*100; update_all(false); }
+    split.oninput = function () { percent.value = this.value / 100; update_all(false); }
+    percent.oninput = function () { split.value = this.value * 100; update_all(false); }
+
+    exportButton.onclick = function () {
+      var history = get_history();
+      var output = ""
+      history.forEach(element => output += String(element) + '\n');
+      var date = String(new Date().toJSON().slice(0, 10));
+      download(date + "_expenses.txt", output)
+    }
+
+    importButton.onclick = function () {
+      var input = document.createElement('input');
+      input.type = 'file';
+
+      input.onchange = e => {
+
+        // getting a hold of the file reference
+        var file = e.target.files[0];
+
+        // setting up the reader
+        var reader = new FileReader();
+        reader.readAsText(file, 'UTF-8');
+
+        // here we tell the reader what to do when it's done reading...
+        reader.onload = readerEvent => {
+          var content = readerEvent.target.result; // this is the content!
+          var history = content.split("\n");
+
+          history.forEach(element => {
+            var idx = element.indexOf(',');
+            key = element.slice(0, idx);
+            value = element.slice(idx + 1);
+            if (!key.isNaN && key && value) {
+              set(key, value)
+            }
+          });
+        }
+      }
+      input.click();
+    }
+
+    function download(filename, text) {
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+
+      element.click();
+
+      document.body.removeChild(element);
+    }
 
     submit.onclick = function () {
       update_all(true);
     }
 
     function set(key, value) {
-      localStorage.setItem(key, value);
+
+      if (get(key)) {
+        localStorage.removeItem(key);
+      }
+
+      if (String(key).length > 0) {
+        localStorage.setItem(key, value);
+      }
     }
 
     function get(key) {
@@ -184,8 +293,17 @@
     }
 
     function makeTableHTML(myArray) {
-      var result = "<table border=1>";
-      for (var i = 0; i < myArray.length; i++) {
+      var result = "<table>";
+      result += "<thead>"
+      result += "<tr>";
+      arr = myArray[0].split(",")
+      for (var j = 0; j < arr.length; j++) {
+        result += "<th>" + arr[j] + "</th>";
+      }
+      result += "</tr>";
+      result += "</thead>"
+
+      for (var i = 1; i < myArray.length; i++) {
         result += "<tr>";
         arr = myArray[i].split(",")
         for (var j = 0; j < arr.length; j++) {
@@ -231,12 +349,32 @@
       border: none;
       width: 300px;
       height: 30px;
-      background-color:rgb(249, 234, 254)
+      background-color: rgb(249, 234, 254)
     }
 
     input[type=button] {
       width: 148px;
       justify-content: space-evenly;
+    }
+
+    .container {
+      display: inline;
+      float: left;
+      padding: 10px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #E9EDF4;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #D0D8E8;
+    }
+
+    th {
+      color: white;
+      background-color: #4F81BD;
+      padding: 5px;
     }
   </style>
 
