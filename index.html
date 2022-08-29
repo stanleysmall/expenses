@@ -47,7 +47,7 @@
         <input type="text" id="note">
       </div>
       <br>
-      <input type="submit" value="Save" id="submit">
+      <input class="submit" type="button" value="Save" id="submit">
 
 
 
@@ -352,7 +352,7 @@
       background-color: rgb(249, 234, 254)
     }
 
-    input[type=button] {
+    input[type=button]:not(.submit) {
       width: 148px;
       justify-content: space-evenly;
     }
@@ -376,6 +376,7 @@
       background-color: #4F81BD;
       padding: 5px;
     }
+
   </style>
 
 </body>
