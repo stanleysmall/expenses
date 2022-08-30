@@ -66,6 +66,8 @@
   </div>
 
   <script>
+    const HEADER = ["ID,Amount,Payer,He,She,Total,Owed,Note"];
+
     localStorage.clear();
 
     var amount = document.getElementById("amount");
@@ -151,7 +153,7 @@
     }
 
     function update_table() {
-      history_table = ["ID,Amount,Payer,He,She,Total,Owed,Note"].concat(get_history());
+      history_table = HEADER.concat(get_history());
       var hist = document.getElementById("history");
       hist.innerHTML = "<h3>History</h3>" + makeTableHTML(history_table);
     }
@@ -219,10 +221,10 @@
 
     exportButton.onclick = function () {
       var history = get_history();
-      var output = ""
+      var output = HEADER + '\n'
       history.forEach(element => output += String(element) + '\n');
       var date = String(new Date().toJSON().slice(0, 10));
-      download(date + "_expenses.txt", output)
+      download(date + "_expenses.csv", output)
     }
 
     importButton.onclick = function () {
