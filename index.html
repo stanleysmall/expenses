@@ -7,6 +7,7 @@
 
 <body>
   <h2>Expense Tracker</h2>
+  <p>Known Issue: Click "She Paid" then "He Paid" for an accurate summary.</p>
   <div style="display: inline-block;">
     <div class="container">
 
@@ -19,9 +20,9 @@
 
       <h4>Edit</h4>
       <div class="section">
-        <input type="number" id="edit_id" placeholder="Enter ID to edit" style = "width: 148px;">
+        <input type="number" id="edit_id" placeholder="Enter ID to edit" style="width: 148px;">
         <input type="button" id="edit" value="Load">
-    </div>
+      </div>
 
       <h4>Purchase Amount</h4>
       <div class="section">
@@ -68,7 +69,6 @@
           id="her_total" style="color:rgb(255,53,127)"></span>)</p>
       <p><span id="balance"></span></p>
       <span id="history"></span>
-      <p>Known Issue: When importing a file, click "She Paid" then "He Paid" for the imported data to appear.</p>
     </div>
   </div>
 
@@ -148,22 +148,27 @@
       if (save) {
         var edit_key = edit_id.value;
         if (localStorage.getItem(edit_key) === null) {
-            
+          id = Date.now()
         }
         else {
-            localStorage.removeItem(edit_key)
-            update_all(false)
+          localStorage.removeItem(edit_key)
+          update_all(false)
+          id = edit_key
         }
-        id = Date.now()
-        
-        set(id, [display(amount_value), previous_payer, display(his_purchase), display(her_purchase), display(total_updated), display(balance_num), note.value])
+
+        if (amount.value > 0) {
+          set(id, [display(amount_value), previous_payer, display(his_purchase), display(her_purchase), display(total_updated), display(balance_num), note.value])
+        }
+        else {
+          alert("Invalid ammount. A new entry has not been saved, and a loaded entry has been deleted.")
+        }
 
 
         amount.value = 0;
         her.innerHTML = " ";
         his.innerHTML = " ";
         summary.innerHTML = " ";
-        note.innerHTML = "";
+        note.value = "";
         edit_id.value = "";
       }
 
@@ -178,7 +183,7 @@
 
     function get_history() {
       var archive = [];
-      var keys = Object.keys(localStorage).sort();
+      var keys = Object.keys(localStorage).sort().reverse();
       var i = keys.length;
 
       var total_amount = 0;
@@ -189,8 +194,7 @@
       while (i--) {
         if (Number(keys[i])) {
           var storage_value = localStorage.getItem(keys[i])
-          var value = String(keys[i]) + ',' + storage_value;
-          archive.push(value);
+          var arr = String(storage_value).split(',');
 
           var ammount;
           var payer;
@@ -199,8 +203,6 @@
           var total;
           var owed;
           var note;
-
-          var arr = String(storage_value).split(',');
 
           ammount = Number(arr[0])
           payer = arr[1]
@@ -218,7 +220,18 @@
             total_owed -= (ammount - she);
           }
 
+          arr[0] = display(ammount)
+          arr[1] = payer
+          arr[2] = display(he)
+          arr[3] = display(she)
+          arr[4] = display(total_amount)
+          arr[5] = display(total_owed)
+
+          var value = String(keys[i]) + ',' + arr.join(',');
+          archive.push(value);
+
         }
+
       }
 
       set("HIS", Number(total_he));
@@ -228,7 +241,7 @@
 
       // console.log(total_he, total_she, total_amount, total_owed)
 
-      return archive;
+      return archive.reverse();
     }
 
     amount.oninput = function () { update_all(false); }
@@ -293,37 +306,37 @@
       update_all(true);
     }
 
-    editButton.onclick = function() {
-        var key = edit_id.value;
-        if (localStorage.getItem(key) === null) {
-            alert("Please enter a valid ID.")
+    editButton.onclick = function () {
+      var key = edit_id.value;
+      if (localStorage.getItem(key) === null) {
+        alert("Please enter a valid ID.")
+      }
+      else {
+        var storage_value = localStorage.getItem(key)
+
+        var arr = String(storage_value).split(',');
+
+        var old_ammount = Number(arr[0])
+        var previous_payer = String(arr[1])
+        var old_he = Number(arr[2])
+        var old_she = Number(arr[3])
+        var old_note = String(arr[6])
+
+
+        amount.value = old_ammount;
+        note.value = old_note;
+
+        if (previous_payer == "HE") {
+          he_paid.click()
         }
-        else {
-            var storage_value = localStorage.getItem(key)
-
-            var arr = String(storage_value).split(',');
-
-            var old_ammount = Number(arr[0])
-            var previous_payer = String(arr[1])
-            var old_he = Number(arr[2])
-            var old_she = Number(arr[3])
-            var old_note = String(arr[6])
-
-
-            amount.value = old_ammount;
-            note.value = old_note;
-
-            if (previous_payer == "HE") {
-                he_paid.click()
-            }
-            if (previous_payer == "SHE") {
-                she_paid.click()
-            }
-
-            percent.value = Math.round(old_she / old_ammount * 100);
-            split.value = percent.value * 100;
-            update_all(false)
+        if (previous_payer == "SHE") {
+          she_paid.click()
         }
+
+        percent.value = Math.round(old_she / old_ammount * 100);
+        split.value = percent.value * 100;
+        update_all(false)
+      }
 
 
 
@@ -432,7 +445,6 @@
       background-color: #4F81BD;
       padding: 5px;
     }
-
   </style>
 
 </body>
