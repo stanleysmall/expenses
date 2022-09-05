@@ -17,6 +17,12 @@
         <input type="button" id="export" value="Export">
       </div>
 
+      <h4>Edit</h4>
+      <div class="section">
+        <input type="number" id="edit_id" placeholder="Enter ID to edit" style = "width: 148px;">
+        <input type="button" id="edit" value="Load">
+    </div>
+
       <h4>Purchase Amount</h4>
       <div class="section">
         <input type="number" id="amount" value="0">
@@ -44,7 +50,7 @@
 
       <h4>Note</h4>
       <div class="section">
-        <input type="text" id="note">
+        <input type="text" id="note" placeholder="Enter a brief note here">
       </div>
       <br>
       <input class="submit" type="button" value="Save" id="submit">
@@ -62,7 +68,7 @@
           id="her_total" style="color:rgb(255,53,127)"></span>)</p>
       <p><span id="balance"></span></p>
       <span id="history"></span>
-      <p>⚠️ Known Issue: When importing a file, click "She Paid" then "He Paid" for the imported data to appear. ⚠️</p>
+      <p>Known Issue: When importing a file, click "She Paid" then "He Paid" for the imported data to appear.</p>
     </div>
   </div>
 
@@ -88,6 +94,9 @@
 
     var importButton = document.getElementById("import");
     var exportButton = document.getElementById("export");
+
+    var edit_id = document.getElementById("edit_id");
+    var editButton = document.getElementById("edit");
 
     set("PREVIOUS_PAYER", "HE");
 
@@ -137,9 +146,16 @@
 
 
       if (save) {
-
-
+        var edit_key = edit_id.value;
+        if (localStorage.getItem(edit_key) === null) {
+            
+        }
+        else {
+            localStorage.removeItem(edit_key)
+            update_all(false)
+        }
         id = Date.now()
+        
         set(id, [display(amount_value), previous_payer, display(his_purchase), display(her_purchase), display(total_updated), display(balance_num), note.value])
 
 
@@ -148,6 +164,7 @@
         his.innerHTML = " ";
         summary.innerHTML = " ";
         note.innerHTML = "";
+        edit_id.value = "";
       }
 
       update_table()
@@ -274,6 +291,42 @@
 
     submit.onclick = function () {
       update_all(true);
+    }
+
+    editButton.onclick = function() {
+        var key = edit_id.value;
+        if (localStorage.getItem(key) === null) {
+            alert("Please enter a valid ID.")
+        }
+        else {
+            var storage_value = localStorage.getItem(key)
+
+            var arr = String(storage_value).split(',');
+
+            var old_ammount = Number(arr[0])
+            var previous_payer = String(arr[1])
+            var old_he = Number(arr[2])
+            var old_she = Number(arr[3])
+            var old_note = String(arr[6])
+
+
+            amount.value = old_ammount;
+            note.value = old_note;
+
+            if (previous_payer == "HE") {
+                he_paid.click()
+            }
+            if (previous_payer == "SHE") {
+                she_paid.click()
+            }
+
+            percent.value = Math.round(old_she / old_ammount * 100);
+            split.value = percent.value * 100;
+            update_all(false)
+        }
+
+
+
     }
 
     function set(key, value) {
