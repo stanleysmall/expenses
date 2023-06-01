@@ -1,54 +1,255 @@
 <!DOCTYPE html>
 <html>
-<script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
-<style>
-    body {
-        margin: 10px;
-    }
-</style>
-
-<body>
-    <p>Bank</p>
-    <input type="radio" id="chase" name="bank" value="chase">
-    <label for="chase">Chase</label><br>
-    <input type="radio" id="boa" name="bank" value="boa">
-    <label for="boa">Bank of America</label><br>
-    <input type="radio" id="wells_fargo" name="bank" value="wells_fargo">
-    <label for="wells_fargo">Wells Fargo</label>
-    <p>Date Range</p>
-    <input type="date" id="start" name="start">
-    <input type="date" id="end" name="end">
+  <head>
+    <title>Bank CSV Import</title>
+    <style>
+      html {
+      background-color: #fff5fc;
+      }
+      html {
+      background-color: #fff5fc;
+      }
+      tr:nth-child(even) {
+      background-color: #E9EDF4;
+      }
+      tr:nth-child(odd) {
+      background-color: #D0D8E8;
+      }
+      th {
+      color: white;
+      background-color: #4F81BD;
+      padding: 5px;
+      }
+      table {
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      }
+      td, th {
+      border: 1px solid black;
+      padding: 8px;
+      }
+      #result {
+      margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Bank CSV Import</h1>
+    <label for="bank">Select Bank:</label>
+    <select id="bank">
+      <option value="amex">American Express</option>
+      <option value="bofa">Bank of America</option>
+      <option value="capitalone">Capital One</option>
+      <option value="chase">Chase</option>
+      <option value="citi">Citi</option>
+      <option value="discover">Discover</option>
+      <option value="goldmansachs">Goldman Sachs</option>
+      <option value="usbank">US Bank</option>
+      <option value="wellsfargo">Wells Fargo</option>
+    </select>
     <br>
-    <button type="button" class="btn btn-primary" onclick="parse()">Upload</button>
-    <p id="json"></p>
-
-</body>
-<script>
-    function parse() {
-        var input = document.createElement('input');
-        input.type = 'file';
-
-        input.onchange = e => {
-
-            var file = e.target.files[0];
-
-            var reader = new FileReader();
-            reader.readAsText(file, 'UTF-8');
-
-            reader.onload = readerEvent => {
-                var content = readerEvent.target.result;
-                var config = { header: true }
-                var json = Papa.parse(content, config);
-                document.getElementById("json").innerHTML = JSON.stringify(json);
-            }
-
+    <label for="csvFile">Select CSV File:</label>
+    <input type="file" id="csvFile">
+    <br>
+    <button onclick="extractAmount()">Upload CSV File</button>
+    <button onclick="downloadCSV()">Export CSV File</button>
+    <br>
+    <label for="payer">Select Payer:</label>
+    <input type="radio" id="hePaid" name="payer" value="HE" checked>
+    <label for="hePaid">He Paid</label>
+    <input type="radio" id="shePaid" name="payer" value="SHE">
+    <label for="shePaid">She Paid</label>
+    <br>
+    <div id="result"></div>
+    <script>
+      var amounts = [];
+      var dates = [];
+      var notes = [];
+      var payer = "";
+      var bank = "";
+      
+      function extractAmount() {
+        // Get selected bank value
+        bank = document.getElementById("bank").value;
+      
+        // Get the uploaded CSV file
+        var file = document.getElementById("csvFile").files[0];
+      
+        // Check if a file is selected
+        if (!file) {
+          alert("Please select a CSV file.");
+          return;
         }
-
-        input.click();
-    }
-    parse()
-</script>
-
+      
+        // Create a file reader
+        var reader = new FileReader();
+      
+        // Handle the file reading
+        reader.onload = function(e) {
+          var contents = e.target.result;
+      
+          // Parse the CSV data
+          var lines = contents.split("\n");
+      
+          // Extract the amounts, dates, and notes based on the selected bank
+          if (bank === "chase") {
+            console.log("Extracting amounts, dates, and notes for Chase bank...");
+            extractAmountsAndDatesFromCSV(lines, 5, 0, [2, 3, 4], true);
+          } else if (bank === "discover") {
+            console.log("Extracting amounts, dates, and notes for Discover bank...");
+            extractAmountsAndDatesFromCSV(lines, 3, 0, [1, 2], true);
+          } else if (bank === "amex") {
+            console.log("Extracting amounts, dates, and notes for American Express bank...");
+            extractAmountsAndDatesFromCSV(lines, 2, 0, [1], true);
+          } else if (bank === "capitalone") {
+            console.log("Extracting amounts, dates, and notes for Capital One bank...");
+            extractAmountsAndDatesFromCSV(lines, 5, 0, [2, 3, 4], true);
+          } else if (bank === "bofa") {
+            console.log("Extracting amounts, dates, and notes for Bank of America...");
+            extractAmountsAndDatesFromCSV(lines, 4, 0, [1, 2, 3], true);
+          } else if (bank === "citi") {
+            console.log("Extracting amounts, dates, and notes for Citi bank...");
+            extractAmountsAndDatesFromCSV(lines, 3, 1, [0], true);
+          } else if (bank === "wellsfargo") {
+            console.log("Extracting amounts and dates for Wells Fargo bank...");
+            extractAmountsAndDatesFromCSV(lines, 1, 0, [4], false);
+          } else if (bank === "goldmansachs") {
+            console.log("Extracting amounts, dates, and notes for Goldman Sachs bank...");
+            extractAmountsAndDatesFromCSV(lines, 6, 0, [1, 2, 3], true);
+          } else if (bank === "usbank") {
+            console.log("Extracting amounts, dates, and notes for US bank...");
+            extractAmountsAndDatesFromCSV(lines, 4, 0, [1, 2, 3], true);
+          }
+      
+          displayResult();
+        };
+      
+        // Read the file as text
+        reader.readAsText(file);
+      }
+      
+      function extractAmountsAndDatesFromCSV(lines, amountIndex, dateIndex, noteIndices, hasHeader) {
+        var start = hasHeader ? 1 : 0;
+      
+        for (var i = start; i < lines.length; i++) {
+          var line = lines[i].split(",");
+      
+          if (line.length >= amountIndex + 1 && line.length >= dateIndex + 1) {
+            var amount = line[amountIndex].trim().replaceAll('\"', '');
+            var date = line[dateIndex].trim().replaceAll('\"', '');
+      
+            if (bank === "wellsfargo" || bank === "usbank") {
+              amount *= -1;
+            }
+            if (amount < 0) {
+              continue;
+            }
+      
+            // Concatenate the data from note columns
+            var note = "";
+            for (var j = 0; j < noteIndices.length; j++) {
+              var noteIndex = noteIndices[j];
+              if (line.length >= noteIndex + 1) {
+                var noteData = line[noteIndex].trim().replaceAll('\"', '');
+                if (noteData.length > 0) {
+                  if (note.length > 0) {
+                    note += " & ";
+                  }
+                  note += noteData;
+                }
+              }
+            }
+      
+            console.log("Amount:", amount, "Date:", date, "Note:", note);
+            if (amount !== "" && date !== "") {
+              amounts.push(amount);
+              dates.push(date);
+              notes.push(note);
+            } else {
+              console.log("Skipped invalid data at line", i + 1, ":", line);
+            }
+          } else {
+            console.log("Skipped invalid line:", line);
+          }
+        }
+      }
+      
+      function displayResult() {
+        var result = document.getElementById("result");
+        result.innerHTML = "";
+      
+        // Create a table to display the extracted data
+        var table = document.createElement("table");
+      
+        // Create the table header
+        var headerRow = document.createElement("tr");
+      
+        var header2 = document.createElement("th");
+        header2.textContent = "Amount";
+        headerRow.appendChild(header2);
+        var header3 = document.createElement("th");
+        header3.textContent = "Date";
+        headerRow.appendChild(header3);
+        var header4 = document.createElement("th");
+        header4.textContent = "Note";
+        headerRow.appendChild(header4);
+        table.appendChild(headerRow);
+      
+        // Create table rows for each extracted data entry
+        for (var i = 0; i < amounts.length; i++) {
+          var row = document.createElement("tr");
+          var cell2 = document.createElement("td");
+          cell2.textContent = amounts[i];
+          row.appendChild(cell2);
+          var cell3 = document.createElement("td");
+          cell3.textContent = dates[i];
+          row.appendChild(cell3);
+          var cell4 = document.createElement("td");
+          cell4.textContent = notes[i];
+          row.appendChild(cell4);
+          table.appendChild(row);
+        }
+      
+        result.appendChild(table);
+      }
+      
+      function downloadCSV() {
+        if (amounts.length === 0) {
+          alert("No data to download. Please extract data first.");
+          return;
+        }
+        
+        // Get selected payer value
+        payer = document.querySelector('input[name="payer"]:checked').value;
+      
+        var csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "ID,Amount,Payer,He,She,Total,Owed,Note\n";
+      
+        for (var i = 0; i < amounts.length; i++) {
+          var id = generateID();
+          var amount = amounts[i];
+          var hePaid = payer === "HE" ? amount : 0;
+          var shePaid = payer === "SHE" ? amount : 0;
+          var total = 0;
+          var owed = 0;
+          var row = + id + "," + amount + "," + payer + "," + hePaid + "," + shePaid + "," + total + "," + owed + "," + dates[i] + ' ' + notes[i];
+          csvContent += row + "\r\n";
+        }
+      
+        var encodedURI = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedURI);
+        link.setAttribute("download", "extracted_data.csv");
+        document.body.appendChild(link); // Required for FF
+      
+        link.click();
+      }
+      
+      function generateID() {
+      var timestamp = new Date().getTime();
+      var randomNum = Math.floor(100000 + Math.random() * 900000);
+      return timestamp + "" + randomNum;
+      }
+    </script>
+  </body>
 </html>
